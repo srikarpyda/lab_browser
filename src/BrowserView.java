@@ -30,7 +30,7 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.events.EventListener;
 import org.w3c.dom.events.EventTarget;
 
-
+import java.util.*;
 /**
  * A class used to display the viewer for a simple HTML browser.
  * 
@@ -61,18 +61,21 @@ public class BrowserView {
     private Button myBackButton;
     private Button myNextButton;
     private Button myHomeButton;
+    private Button myFavoritesButton;
     // favorites
     private ComboBox<String> myFavorites;
     // get strings from resource file
     private ResourceBundle myResources;
     // the data
     private BrowserModel myModel;
-
+    private ArrayList<String> myFavoritesList;
     /**
      * Create a view of the given model of a web browser.
      */
     public BrowserView (BrowserModel model, String language) {
         myModel = model;
+        myFavoritesList=new ArrayList<String>();
+        myFavorites=new ComboBox<String>();
         // use resources for labels
         myResources = ResourceBundle.getBundle(DEFAULT_RESOURCE_PACKAGE + language);
         BorderPane root = new BorderPane();
@@ -84,20 +87,31 @@ public class BrowserView {
         enableButtons();
         // create scene to hold UI
         myScene = new Scene(root, DEFAULT_SIZE.width, DEFAULT_SIZE.height);
-        //myScene.getStylesheets().add(DEFAULT_RESOURCE_PACKAGE + STYLESHEET);
+        myScene.getStylesheets().add(DEFAULT_RESOURCE_PACKAGE + STYLESHEET);
     }
 
     /**
      * Display given URL.
      */
     public void showPage (String url) {
-        URL valid = myModel.go(url);
+    /*    URL valid = myModel.go(url);
         if (valid != null) {
             update(valid);
         }
         else {
-            showError("Could not load " + url);
+            showError(myResources.getString("ErrorLoad") + url);
         }
+   */
+    	try{
+    		URL valid = myModel.go(url);
+    		update(valid);
+    	}
+    	catch (Exception e){
+    		BrowserException be=new BrowserException(e.getMessage());
+    	//	throw new BrowserException(url);
+    		showError(be.getMessage());
+    	}
+       
     }
 
     /**
@@ -143,7 +157,7 @@ public class BrowserView {
     private void showFavorite (String favorite) {
         showPage(myModel.getFavorite(favorite).toString());
         // reset favorites ComboBox so the same choice can be made again
-        myFavorites.setValue(null);
+       // myFavorites.setValue(null);
     }
 
     // update just the view to display given URL
@@ -164,7 +178,13 @@ public class BrowserView {
         if (response.isPresent()) {
             myModel.addFavorite(response.get());
             myFavorites.getItems().add(response.get());
+            myFavoritesList.add(response.get());
+            myFavorites.getItems().add(response.get());
         }
+        
+        System.out.println(myFavoritesList.size());
+        System.out.println(myFavoritesList);
+        
     }
 
     // only enable buttons when useful to user
@@ -172,6 +192,7 @@ public class BrowserView {
         myBackButton.setDisable(! myModel.hasPrevious());
         myNextButton.setDisable(! myModel.hasNext());
         myHomeButton.setDisable(myModel.getHome() == null);
+        // myFavoritesButton.setDisable();
     }
 
     // convenience method to create HTML page display
@@ -213,11 +234,24 @@ public class BrowserView {
         result.getChildren().add(myNextButton);
         myHomeButton = makeButton("HomeCommand", event -> home());
         result.getChildren().add(myHomeButton);
+        
+        myFavoritesButton=makeButton("AddFavoriteCommand", event-> addFavorite());
+        result.getChildren().add(myFavoritesButton);
+        
+        
         // if user presses button or enter in text field, load/show the URL
         EventHandler<ActionEvent> showHandler = new ShowPage();
         result.getChildren().add(makeButton("GoCommand", showHandler));
         myURLDisplay = makeInputField(40, showHandler);
         result.getChildren().add(myURLDisplay);
+     //   myFavorites.getItems().add("go");
+      //  myFavorites = new ComboBox();
+      //  myFavorites.getItems().addAll(myFavoritesList);
+      //  myFavorites.getItems().add(response.get());
+      //  myFavorites.getItems().addAll(myModel.getFavorites().keySet());
+      //  myFavorites.getItems().addAll(myFavoritesList);
+        result.getChildren().add(myFavorites);
+        myFavorites.getItems().addAll(myFavoritesList);
         return result;
     }
 

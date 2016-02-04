@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ResourceBundle;
 
 
 /**
@@ -15,18 +16,25 @@ import java.util.Map;
 public class BrowserModel {
     // constants
     public static final String PROTOCOL_PREFIX = "http://";
+    public static final String DEFAULT_RESOURCE_PACKAGE = "resources/";
+
     // state
+    
     private URL myHome;
     private URL myCurrentURL;
     private int myCurrentIndex;
     private List<URL> myHistory;
     private Map<String, URL> myFavorites;
+    private ResourceBundle myResources;
+
 
 
     /**
      * Creates an empty model.
      */
-    public BrowserModel () {
+    public BrowserModel (String language) {
+        myResources = ResourceBundle.getBundle(DEFAULT_RESOURCE_PACKAGE + language);
+
         myHome = null;
         myCurrentURL = null;
         myCurrentIndex = -1;
@@ -58,8 +66,9 @@ public class BrowserModel {
 
     /**
      * Changes current page to given URL, removing next history.
+     * @throws BrowserException 
      */
-    public URL go (String url) {
+    public URL go (String url) throws BrowserException {
         try {
             URL tmp = completeURL(url);
             // unfortunately, completeURL may not have returned a valid URL, so test it
@@ -76,13 +85,20 @@ public class BrowserModel {
             return myCurrentURL;
         }
         catch (Exception e) {
-            return null;
+            // horrible!!
+        	//return null;
+        	
+        	throw new BrowserException(String.format(myResources.getString("ErrorLoad"), url));
         }
     }
 
     /**
      * Returns true if there is a next URL available
      */
+    
+    public Map<String, URL> getFavorites(){
+    	return myFavorites;
+    }
     public boolean hasNext () {
         return myCurrentIndex < (myHistory.size() - 1);
     }
